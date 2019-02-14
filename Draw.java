@@ -11,37 +11,52 @@ import java.util.ArrayList;
 
 public class Draw extends JComponent{
 
-	private BufferedImage image;
-	private BufferedImage backgroundImage;
-	public URL resource = getClass().getResource("Running/run0.png");
-
-	// circle's position
-	public int x = 30;
-	public int y = 30;
-
-	// animation states
-	public int state = 0;
+	public BufferedImage backgroundImage;
+	public Player player;
 
 	public Random randomizer;
 
 	public int enemyCount;
 	Monster[] monsters = new Monster[10];
 	public ArrayList<Monster> monsterlist = new ArrayList<>();
+	
 
 	public Draw(){
-
 		randomizer = new Random();
 		player = new Player(-10, 520, this);
 
 		spawnEnemy();
 
 		try{
-			image = ImageIO.read(resource);
 			backgroundImage = ImageIO.read(getClass().getResource("background.jpg"));
 		}
 		catch(IOException e){
 			e.printStackTrace();
 		}
+	}
+
+	public void startGame(){
+		Thread gameThread = new Thread(new Runnable(){
+			public void run(){
+				while(true){
+					try{
+						for(int c = 0; c < monsterlist.size(); c++){
+							if(monsterlist.size()!= 0){
+								monsterlist.get(c).moveTo(player.x, player.y);
+								repaint();
+							}
+							if(monsterlist.get(c).life <= 0){
+								monsterlist.remove(c);
+				}
+						}
+						Thread.sleep(100);
+					} catch (InterruptedException e) {
+							e.printStackTrace();
+					}
+				}
+			}
+		});
+		gameThread.start();
 	}
 
 	public void spawnEnemy(){
@@ -55,99 +70,26 @@ public class Draw extends JComponent{
 		}
 	}
 
-	public void reloadImage(){
-		state++;
+	public void checkCollision(){
+	 
+		for(int i=0; i < monsterlist.size(); i++){
+			if(player.isAttacking == true){
+				if(player.playerBounds().intersects(monsterlist.get(i).monsterBounds())){
+					monsterlist.get(i).life -= 10;
 
-		if(state == 0){
-			resource = getClass().getResource("Running/run0.png");
-		}
-		else if(state == 1){
-			resource = getClass().getResource("Running/run1.png");
-		}
-		else if(state == 2){
-			resource = getClass().getResource("Running/run2.png");
-		}
-		else if(state == 3){
-			resource = getClass().getResource("Running/run3.png");
-		}
-		else if(state == 4){
-			resource = getClass().getResource("Running/run4.png");
-		}
-		else if(state == 5){
-			resource = getClass().getResource("Running/run5.png");
-			state = 0;
-		}
-
-		try{
-			image = ImageIO.read(resource);
-		}
-		catch(IOException e){
-			e.printStackTrace();
-		}
-	}
-
-	public void attackAnimation(){
-		Thread thread1 = new Thread(new Runnable(){
-			public void run(){
-				for(int ctr = 0; ctr < 5; ctr++){
-					try {
-						if(ctr==4){
-							resource = getClass().getResource("Running/run0.png");
-						}
-						else{
-							resource = getClass().getResource("Attacking/attack"+ctr+".png");
-						}
-						
-						try{
-							image = ImageIO.read(resource);
-						}
-						catch(IOException e){
-							e.printStackTrace();
-						}
-				        repaint();
-				        Thread.sleep(100);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
 				}
+						
 			}
-		});
-		thread1.start();
+		}
 	}
 
-	public void attack(){
-		attackAnimation();
-	}
-
-	public void moveUp(){
-		y = y - 5;
-		reloadImage();
-		repaint();
-	}
-
-	public void moveDown(){
-		y = y + 5;
-		reloadImage();
-		repaint();
-	}
-
-	public void moveLeft(){
-		x = x - 5;
-		reloadImage();
-		repaint();
-	}
-
-	public void moveRight(){
-		x = x + 5;
-		reloadImage();
-		repaint();
-	}
-	
 	public void paintComponent(Graphics g){
 		super.paintComponent(g);
 		g.setColor(Color.YELLOW);
 		g.drawImage(backgroundImage, 0, 0, this);
-		g.drawImage(image, x, y, this);
+		
+		g.drawImage(player.image, player.x, player.y, this);
+
 
 		for(int c = 0; c < monsterlist.size(); c++){
 			if(monsterlist.size() != 0){
